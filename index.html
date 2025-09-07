@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Important for mobile scaling -->
   <title>Expense & Bills Tracker</title>
   <style>
     body {
@@ -9,11 +10,12 @@
       margin: 20px;
       background: #000000;
     }
-    h2 { color: #ffffff; }
+    h2 { color: #ffffff; text-align: center; }
     input, button {
       margin: 5px;
-      padding: 8px;
+      padding: 10px;
       border-radius: 5px;
+      font-size: 1rem;
     }
     button {
       background: #007bff;
@@ -23,7 +25,7 @@
     }
     button:hover { background: #0056b3; }
     .section {
-      background: rgb(255, 255, 255);
+      background: #ffffff;
       padding: 15px;
       border-radius: 10px;
       margin-bottom: 20px;
@@ -31,6 +33,42 @@
     }
     ul { list-style-type: none; padding: 0; }
     li { margin: 5px 0; }
+
+    /* 📱 Mobile (max-width: 600px) */
+    @media (max-width: 600px) {
+      body {
+        margin: 10px;
+      }
+      .section {
+        padding: 12px;
+      }
+      input, button {
+        display: block;
+        width: 100%;
+        margin: 8px 0;
+        font-size: 0.95rem;
+      }
+      h2 {
+        font-size: 1.4rem;
+      }
+      h3 {
+        font-size: 1.2rem;
+      }
+    }
+
+    /* 💻 Desktop (min-width: 601px) */
+    @media (min-width: 601px) {
+      body {
+        max-width: 900px;
+        margin: auto;
+      }
+      input {
+        width: auto;
+      }
+      button {
+        width: auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -81,7 +119,6 @@
   let bills = JSON.parse(localStorage.getItem("bills")) || [];
   let balanceHistory = JSON.parse(localStorage.getItem("balanceHistory")) || [];
 
-  // Update UI
   function updateUI() {
     document.getElementById("balance").innerText = balance;
 
@@ -119,25 +156,22 @@
       historyList.appendChild(li);
     });
 
-    // Save data
     localStorage.setItem("balance", balance);
     localStorage.setItem("expenses", JSON.stringify(expenses));
     localStorage.setItem("bills", JSON.stringify(bills));
     localStorage.setItem("balanceHistory", JSON.stringify(balanceHistory));
   }
 
-  // Add or update balance
   function setOrUpdateBalance() {
     let val = parseInt(document.getElementById("balanceInput").value);
     if (!isNaN(val)) {
-      balance += val; // add money
+      balance += val;
       balanceHistory.push({ amount: val, date: new Date().toLocaleString() });
       updateUI();
       document.getElementById("balanceInput").value = "";
     }
   }
 
-  // Add expense
   function addExpense() {
     let amount = parseInt(document.getElementById("expenseAmount").value);
     let category = document.getElementById("expenseCategory").value;
@@ -153,7 +187,6 @@
     }
   }
 
-  // Add bill
   function addBill() {
     let amount = parseInt(document.getElementById("billAmount").value);
     let category = document.getElementById("billCategory").value;
@@ -168,7 +201,6 @@
     }
   }
 
-  // Pay bill
   function payBill(index) {
     let bill = bills[index];
     balance -= bill.amount;
@@ -177,24 +209,14 @@
     updateUI();
   }
 
-  // Reset and download data
   function resetData() {
-    // Create export object
-    let exportData = {
-      balance,
-      expenses,
-      bills,
-      balanceHistory
-    };
-
-    // Download as JSON
+    let exportData = { balance, expenses, bills, balanceHistory };
     let blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     let link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `expense_data_${new Date().toISOString().slice(0,10)}.json`;
     link.click();
 
-    // Clear everything
     balance = 0;
     expenses = [];
     bills = [];
@@ -203,10 +225,10 @@
     updateUI();
   }
 
-  // Load saved balance
   balance = parseInt(localStorage.getItem("balance")) || 0;
   updateUI();
 </script>
 
 </body>
 </html>
+
