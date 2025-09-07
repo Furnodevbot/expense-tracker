@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense & Bills Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #000000;
+    }
+    h2 { color: #ffffff; }
+    input, button {
+      margin: 5px;
+      padding: 8px;
+      border-radius: 5px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { background: #0056b3; }
+    .section {
+      background: rgb(255, 255, 255);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    ul { list-style-type: none; padding: 0; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+  <h2>💰 Expense & Bills Tracker</h2>
+  
+  <!-- Balance Section -->
+  <div class="section">
+    <label>Enter Balance (₹): </label>
+    <input type="number" id="balanceInput" />
+    <button onclick="setOrUpdateBalance()">Add to Balance</button>
+    <h3>Available Balance: ₹<span id="balance">0</span></h3>
+    <h4>Balance History:</h4>
+    <ul id="balanceHistory"></ul>
+  </div>
+
+  <!-- Expense Section -->
+  <div class="section">
+    <h3>Add Expense</h3>
+    <input type="number" id="expenseAmount" placeholder="Amount" />
+    <input type="text" id="expenseCategory" placeholder="Category (e.g. Food)" />
+    <input type="text" id="expenseNote" placeholder="Note (e.g. Bakery)" />
+    <button onclick="addExpense()">Add Expense</button>
+    <ul id="expenseList"></ul>
+  </div>
+
+  <!-- Bills Section -->
+  <div class="section">
+    <h3>Pending Bills</h3>
+    <input type="number" id="billAmount" placeholder="Amount" />
+    <input type="text" id="billCategory" placeholder="Category (e.g. Rent)" />
+    <input type="date" id="billDueDate" />
+    <button onclick="addBill()">Add Bill</button>
+    <ul id="billList"></ul>
+  </div>
+
+  <!-- Summary Section -->
+  <div class="section">
+    <h3>📊 Summary</h3>
+    <p>Total Spent: ₹<span id="totalSpent">0</span></p>
+    <p>Pending Bills: ₹<span id="totalPending">0</span></p>
+    <button style="background: red;" onclick="resetData()">Reset Month & Download Data</button>
+  </div>
+
+<script>
+  let balance = 0;
+  let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+  let bills = JSON.parse(localStorage.getItem("bills")) || [];
+  let balanceHistory = JSON.parse(localStorage.getItem("balanceHistory")) || [];
+
+  // Update UI
+  function updateUI() {
+    document.getElementById("balance").innerText = balance;
+
+    // Expenses
+    let expList = document.getElementById("expenseList");
+    expList.innerHTML = "";
+    let totalSpent = 0;
+    expenses.forEach(e => {
+      totalSpent += e.amount;
+      let li = document.createElement("li");
+      li.textContent = `₹${e.amount} - ${e.category} (${e.note})`;
+      expList.appendChild(li);
+    });
+    document.getElementById("totalSpent").innerText = totalSpent;
+
+    // Bills
+    let billList = document.getElementById("billList");
+    billList.innerHTML = "";
+    let totalPending = 0;
+    bills.forEach((b, index) => {
+      totalPending += b.amount;
+      let li = document.createElement("li");
+      li.innerHTML = `₹${b.amount} - ${b.category} (Due: ${b.due}) 
+        <button onclick="payBill(${index})">Mark as Paid</button>`;
+      billList.appendChild(li);
+    });
+    document.getElementById("totalPending").innerText = totalPending;
+
+    // Balance History
+    let historyList = document.getElementById("balanceHistory");
+    historyList.innerHTML = "";
+    balanceHistory.forEach(h => {
+      let li = document.createElement("li");
+      li.textContent = `${h.date}: +₹${h.amount}`;
+      historyList.appendChild(li);
+    });
+
+    // Save data
+    localStorage.setItem("balance", balance);
+    localStorage.setItem("expenses", JSON.stringify(expenses));
+    localStorage.setItem("bills", JSON.stringify(bills));
+    localStorage.setItem("balanceHistory", JSON.stringify(balanceHistory));
+  }
+
+  // Add or update balance
+  function setOrUpdateBalance() {
+    let val = parseInt(document.getElementById("balanceInput").value);
+    if (!isNaN(val)) {
+      balance += val; // add money
+      balanceHistory.push({ amount: val, date: new Date().toLocaleString() });
+      updateUI();
+      document.getElementById("balanceInput").value = "";
+    }
+  }
+
+  // Add expense
+  function addExpense() {
+    let amount = parseInt(document.getElementById("expenseAmount").value);
+    let category = document.getElementById("expenseCategory").value;
+    let note = document.getElementById("expenseNote").value;
+
+    if (!isNaN(amount) && amount > 0) {
+      expenses.push({ amount, category, note });
+      balance -= amount;
+      updateUI();
+      document.getElementById("expenseAmount").value = "";
+      document.getElementById("expenseCategory").value = "";
+      document.getElementById("expenseNote").value = "";
+    }
+  }
+
+  // Add bill
+  function addBill() {
+    let amount = parseInt(document.getElementById("billAmount").value);
+    let category = document.getElementById("billCategory").value;
+    let due = document.getElementById("billDueDate").value;
+
+    if (!isNaN(amount) && amount > 0 && due) {
+      bills.push({ amount, category, due });
+      updateUI();
+      document.getElementById("billAmount").value = "";
+      document.getElementById("billCategory").value = "";
+      document.getElementById("billDueDate").value = "";
+    }
+  }
+
+  // Pay bill
+  function payBill(index) {
+    let bill = bills[index];
+    balance -= bill.amount;
+    expenses.push({ amount: bill.amount, category: bill.category, note: "Bill Paid" });
+    bills.splice(index, 1);
+    updateUI();
+  }
+
+  // Reset and download data
+  function resetData() {
+    // Create export object
+    let exportData = {
+      balance,
+      expenses,
+      bills,
+      balanceHistory
+    };
+
+    // Download as JSON
+    let blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `expense_data_${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+
+    // Clear everything
+    balance = 0;
+    expenses = [];
+    bills = [];
+    balanceHistory = [];
+    localStorage.clear();
+    updateUI();
+  }
+
+  // Load saved balance
+  balance = parseInt(localStorage.getItem("balance")) || 0;
+  updateUI();
+</script>
+
+</body>
+</html>
