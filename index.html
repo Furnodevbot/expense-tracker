@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Important for mobile scaling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expense & Bills Tracker</title>
   <style>
     body {
@@ -34,7 +34,7 @@
     ul { list-style-type: none; padding: 0; }
     li { margin: 5px 0; }
 
-    /* 📱 Mobile (max-width: 600px) */
+    /* 📱 Mobile view */
     @media (max-width: 600px) {
       body {
         margin: 10px;
@@ -56,7 +56,7 @@
       }
     }
 
-    /* 💻 Desktop (min-width: 601px) */
+    /* 💻 Desktop view */
     @media (min-width: 601px) {
       body {
         max-width: 900px;
@@ -92,7 +92,11 @@
     <input type="text" id="expenseCategory" placeholder="Category (e.g. Food)" />
     <input type="text" id="expenseNote" placeholder="Note (e.g. Bakery)" />
     <button onclick="addExpense()">Add Expense</button>
-    <ul id="expenseList"></ul>
+
+    <details id="expenseDropdown">
+      <summary style="cursor:pointer; font-weight:bold;">Show Expenses ▼</summary>
+      <ul id="expenseList"></ul>
+    </details>
   </div>
 
   <!-- Bills Section -->
@@ -129,7 +133,7 @@
     expenses.forEach(e => {
       totalSpent += e.amount;
       let li = document.createElement("li");
-      li.textContent = `₹${e.amount} - ${e.category} (${e.note})`;
+      li.textContent = `₹${e.amount} - ${e.category} (${e.note}) | ${e.timestamp}`;
       expList.appendChild(li);
     });
     document.getElementById("totalSpent").innerText = totalSpent;
@@ -156,6 +160,7 @@
       historyList.appendChild(li);
     });
 
+    // Save all data
     localStorage.setItem("balance", balance);
     localStorage.setItem("expenses", JSON.stringify(expenses));
     localStorage.setItem("bills", JSON.stringify(bills));
@@ -178,12 +183,16 @@
     let note = document.getElementById("expenseNote").value;
 
     if (!isNaN(amount) && amount > 0) {
-      expenses.push({ amount, category, note });
+      let timestamp = new Date().toLocaleString();
+      expenses.push({ amount, category, note, timestamp });
       balance -= amount;
       updateUI();
       document.getElementById("expenseAmount").value = "";
       document.getElementById("expenseCategory").value = "";
       document.getElementById("expenseNote").value = "";
+
+      // Close the dropdown automatically after adding
+      document.getElementById("expenseDropdown").open = false;
     }
   }
 
@@ -204,7 +213,7 @@
   function payBill(index) {
     let bill = bills[index];
     balance -= bill.amount;
-    expenses.push({ amount: bill.amount, category: bill.category, note: "Bill Paid" });
+    expenses.push({ amount: bill.amount, category: bill.category, note: "Bill Paid", timestamp: new Date().toLocaleString() });
     bills.splice(index, 1);
     updateUI();
   }
@@ -231,4 +240,3 @@
 
 </body>
 </html>
-
